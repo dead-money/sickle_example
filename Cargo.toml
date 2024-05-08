@@ -1,0 +1,14 @@
+[package]
+name = "sickle_example"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+## Bevy
+bevy = { version = "0.13" }
+
+## Bevy Inspector Egui makes it easy to modify widgets at runtime.
+bevy-inspector-egui = "0.24"
+
+## Sickle is a UI library for Bevy.
+sickle_ui = { git = "https://github.com/UmbraLuminosa/sickle_ui" }
