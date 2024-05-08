@@ -15,11 +15,6 @@ use sickle_ui::{
     },
 };
 
-pub(super) fn plugin(app: &mut App) {
-    app //
-        .add_systems(Update, init_label);
-}
-
 #[derive(Component)]
 pub struct BannerWidget;
 
@@ -29,13 +24,16 @@ struct BannerLabel;
 
 pub struct BannerWidgetConfig {
     pub label: String,
-    // Other options can be added here...
+    pub font: String,
+    pub font_size: f32,
 }
 
 impl BannerWidgetConfig {
-    pub fn from(label: impl Into<String>) -> Self {
+    pub fn new(label: impl Into<String>, font: impl Into<String>, font_size: f32) -> Self {
         Self {
             label: label.into(),
+            font: font.into(),
+            font_size,
         }
     }
 }
@@ -75,25 +73,13 @@ impl<'w, 's> UiBannerWidgetExt<'w, 's> for UiBuilder<'w, 's, '_, UiRoot> {
             label
                 .entity_commands()
                 .insert(BannerLabel)
-                .set_text(config.label, None);
+                .set_text(config.label, None)
+                .font(
+                    config.font,
+                    config.font_size,
+                    Color::rgb(0.471, 0.278, 0.153),
+                );
         })
-    }
-}
-
-fn init_label(
-    mut banner_labels: Query<&mut Text, Added<BannerLabel>>,
-    asset_server: Res<AssetServer>,
-) {
-    // Delayed initialization of the label font.
-    // This allows us to set the font style without having to pass in the AssetServer to our widget builder method.
-    for mut text in &mut banner_labels {
-        for text_section in &mut text.sections {
-            text_section.style = TextStyle {
-                font: asset_server.load("FiraSans-Bold.ttf"),
-                font_size: 30.0,
-                color: Color::rgb(0.471, 0.278, 0.153),
-            }
-        }
     }
 }
 
@@ -101,6 +87,12 @@ fn init_label(
 // (Really, this is not constrained to just a banner widget and could be used on any widget.)
 pub trait BannerWidgetCommands<'a> {
     fn set_position(&'a mut self, x: f32, y: f32) -> &mut EntityCommands<'a>;
+    fn font(
+        &'a mut self,
+        font: impl Into<String>,
+        size: f32,
+        color: Color,
+    ) -> &mut EntityCommands<'a>;
 }
 
 impl<'a> BannerWidgetCommands<'a> for EntityCommands<'a> {
@@ -108,8 +100,18 @@ impl<'a> BannerWidgetCommands<'a> for EntityCommands<'a> {
         // We insert our custom command into the entity commands queue.
         self.add(SetPosition(x, y))
     }
+
+    fn font(
+        &'a mut self,
+        font: impl Into<String>,
+        size: f32,
+        color: Color,
+    ) -> &mut EntityCommands<'a> {
+        self.add(SetFont(font.into(), size, color))
+    }
 }
 
+// Just an example! Use SetAbsolutePosition in sickle instead.
 struct SetPosition(f32, f32);
 
 impl EntityCommand for SetPosition {
@@ -126,5 +128,22 @@ impl EntityCommand for SetPosition {
 
         // Because you have access to the world, you could get resources here, load assets,
         // do anything you need to modify your widget in an interesting way.
+    }
+}
+
+struct SetFont(String, f32, Color);
+
+impl EntityCommand for SetFont {
+    fn apply(self, entity: Entity, world: &mut World) {
+        let asset_server = world.resource::<AssetServer>();
+        let font = asset_server.load(&self.0);
+
+        if let Some(mut text) = world.entity_mut(entity).get_mut::<Text>() {
+            for text_section in &mut text.sections {
+                text_section.style.font = font.clone();
+                text_section.style.font_size = self.1;
+                text_section.style.color = self.2;
+            }
+        }
     }
 }

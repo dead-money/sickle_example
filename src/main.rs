@@ -24,7 +24,7 @@ fn main() {
         // Add the WorldInspectorPlugin or a custom inspector plugin to your app
         // so that you can tweak the layout of widgets at runtime.
         .add_plugins(WorldInspectorPlugin::new())
-        .add_plugins((banner_widget::plugin, fps_widget::plugin))
+        .add_plugins(fps_widget::plugin)
         .add_systems(Startup, spawn_camera)
         .add_systems(
             Update,
@@ -86,21 +86,28 @@ fn spawn_fps_widget(mut commands: Commands) {
 struct FlyingExample;
 
 fn spawn_banner_widgets(mut commands: Commands) {
+    let font = "FiraSans-Bold.ttf";
+    let font_size = 30.0;
+
     commands
         .ui_builder(UiRoot)
-        .banner_widget(BannerWidgetConfig::from("Hello, World!"))
+        .banner_widget(BannerWidgetConfig::new("Hello, World!", font, font_size))
         .entity_commands()
         .set_position(100.0, 100.0);
 
     commands
         .ui_builder(UiRoot)
-        .banner_widget(BannerWidgetConfig::from("Bonjour, le Monde!"))
+        .banner_widget(BannerWidgetConfig::new(
+            "Bonjour, le Monde!",
+            font,
+            font_size,
+        ))
         .entity_commands()
         .set_position(300.0, 300.0);
 
     commands
         .ui_builder(UiRoot)
-        .banner_widget(BannerWidgetConfig::from("¡Hola, Mundo!"))
+        .banner_widget(BannerWidgetConfig::new("¡Hola, Mundo!", font, font_size))
         .entity_commands()
         .set_position(700.0, 100.0)
         .insert(FlyingExample);
